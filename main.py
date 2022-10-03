@@ -9,6 +9,4 @@ sample.to_csv("Dataset\\test2.csv")
 print(sample.head())
 
 
-conda activate C:\Anaconda\envs\mltech
-C:\Anaconda\Scripts\conda.exe install -p C:/Anaconda/envs/mltech plyer -y
 
