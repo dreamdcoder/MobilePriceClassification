@@ -24,6 +24,11 @@ import mlflow
 import mlflow.sklearn
 import logging
 
+import os
+os.environ['HTTP_PROXY']="http://genproxy.amdocs.com:8080"
+os.environ['HTTPS_PROXY']="http://genproxy.amdocs.com:8080"
+os.environ['no_proxy']="localhost,127.0.0.1,.svc,.local,.amdocs.com,.sock,docker.sock,localaddress,.localdomain.com"
+
 warnings.filterwarnings('ignore')
 
 mlflow.set_tracking_uri('http://ilcepoc2353:5000/')
