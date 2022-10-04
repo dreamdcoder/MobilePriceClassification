@@ -89,8 +89,8 @@ if __name__ == "__main__":
             mlflow.log_metric("Precision", params[4])
             mlflow.log_metric("Recall", params[5])
             mlflow.log_metric("rmse", params[6])
-            # if tracking_url_type_store != "file":
-            #     # Register the model
-            #     mlflow.sklearn.log_model(lr, "model", registered_model_name=model_name)
-            # else:
-            #     mlflow.sklearn.log_model(lr, "model")
+            if tracking_url_type_store != "file":
+                # Register the model
+                mlflow.sklearn.log_model(lr, "model", registered_model_name=model_name)
+            else:
+                mlflow.sklearn.log_model(lr, "model")
