@@ -6,6 +6,8 @@ import pandas as pd
 # import seaborn as sns
 # from imblearn.over_sampling import SMOTE
 import warnings
+
+from mlflow import MlflowClient
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 # from collections import Counter
@@ -25,17 +27,18 @@ import mlflow.sklearn
 import logging
 
 import os
+
 os.environ['HTTP_PROXY']="http://genproxy.amdocs.com:8080"
 os.environ['HTTPS_PROXY']="http://genproxy.amdocs.com:8080"
 os.environ['no_proxy']="localhost,127.0.0.1,.svc,.local,.amdocs.com,.sock,docker.sock,localaddress,.localdomain.com"
 
 warnings.filterwarnings('ignore')
 
-mlflow.set_tracking_uri('http://ilcepoc2353:5000/')
-mlflow.set_experiment("alpha experiment")
+mlflow.set_tracking_uri('http://ilcepoc2353:1235/')
+mlflow.set_experiment("alpha's xyz")
 
 
-def evaluation_metrics(X_train, y_train, y_test, model):
+def evaluation_metrics(X_test, X_train, y_train, y_test, model):
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred, labels=model.classes_)
@@ -54,10 +57,26 @@ def evaluation_metrics(X_train, y_train, y_test, model):
     return disp, [Accuracy, F1_score, mae, r2, Precision, Recall, rmse]
 
 
+def delete_models():
+    client = MlflowClient()
+    versions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    models = ["LogisticRegression", "RandomForestClassifier", "DecisionTreeClassifier",
+              "AdaBoostClassifier", "GradientBoostingClassifier", "ExtraTreesClassifier"]
+    for model_name in models:
+        for version in versions:
+            try:
+                client.delete_model_version(name=model_name, version=version)
+            except mlflow.exceptions.RestException:
+                pass
+        try:
+            client.delete_registered_model(name=model_name)
+        except mlflow.exceptions.RestException:
+            pass
+
+
 if __name__ == "__main__":
     # read data
-    train_data_path = Path("Dataset/train.csv")
-    test_data_path = Path("Dataset/test.csv")
+    train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
     df = pd.read_csv(train_data_path)
 
     # separate X and y
@@ -83,7 +102,7 @@ if __name__ == "__main__":
         print(f"{model_name}")
         print(50 * '*')
         with mlflow.start_run():
-            disp, params = evaluation_metrics(X_train, y_train, y_test, model_obj)
+            disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
             # disp.plot()
             # plt.grid(False)
             # plt.show()
@@ -96,6 +115,10 @@ if __name__ == "__main__":
             mlflow.log_metric("rmse", params[6])
             if tracking_url_type_store != "file":
                 # Register the model
-                mlflow.sklearn.log_model(lr, "model", registered_model_name=model_name)
+                model_info = mlflow.sklearn.log_model(model_obj, artifact_path="model",
+                                                      registered_model_name=model_name)
             else:
-                mlflow.sklearn.log_model(lr, "model")
+                model_info = mlflow.sklearn.log_model(model_obj, artifact_path=model_name)
+
+            print(model_info.model_uri)
+    # delete_models()

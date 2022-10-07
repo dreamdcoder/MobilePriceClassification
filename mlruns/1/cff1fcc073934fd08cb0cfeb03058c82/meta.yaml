@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/yogeshja/PycharmProjects/MobilePriceClassification/mlruns/1/cff1fcc073934fd08cb0cfeb03058c82/artifacts
+end_time: 1664886406228
+entry_point_name: ''
+experiment_id: '1'
+lifecycle_stage: active
+name: ''
+run_id: cff1fcc073934fd08cb0cfeb03058c82
+run_uuid: cff1fcc073934fd08cb0cfeb03058c82
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1664886402675
+status: 4
+tags: []
+user_id: YOGESHJA

@@ -1,6 +1,6 @@
-artifact_location: ./mlruns/0
-creation_time: 1664864649865
+artifact_location: file:///C:/Users/yogeshja/PycharmProjects/MobilePriceClassification/mlruns/0
+creation_time: 1664886402401
 experiment_id: '0'
-last_update_time: 1664864649865
+last_update_time: 1664886402401
 lifecycle_stage: active
 name: Default
