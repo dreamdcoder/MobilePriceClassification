@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 # import matplotlib.pyplot as plt
@@ -25,7 +26,6 @@ from sklearn.ensemble import ExtraTreesClassifier
 from pathlib import Path
 import mlflow
 import mlflow.sklearn
-from mlflow.types.schema import Schema, ColSpec
 import logging
 from PIL import Image
 import json
@@ -114,7 +114,8 @@ def run_experiments():
     etc = ExtraTreesClassifier(random_state=0)
 
     models = {"LogisticRegression": lr, "RandomForestClassifier": rf, "DecisionTreeClassifier": dtc,
-              "AdaBoostClassifier": ab, "GradientBoostingClassifier": gtb, "ExtraTreesClassifier": etc}
+              "AdaBoostClassifier": ab, "GradientBoostingClassifier": gtb}  # , "ExtraTreesClassifier": etc}
+    # models = {"ExtraTreesClassifier": etc}
     tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
     print(tracking_url_type_store)
     for model_name, model_obj in models.items():
@@ -123,9 +124,10 @@ def run_experiments():
         print(50 * '*')
         with mlflow.start_run() as run:
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
-            # disp.plot()
+            disp.plot()
             # plt.grid(False)
             # plt.show()
+            plt.savefig(model_name + "_cm.png")
             mlflow.log_metric("Accuracy", params[0])
             mlflow.log_metric("F1_score", params[1])
             mlflow.log_metric("mae", params[2])
@@ -133,20 +135,15 @@ def run_experiments():
             mlflow.log_metric("Precision", params[4])
             mlflow.log_metric("Recall", params[5])
             mlflow.log_metric("rmse", params[6])
-            image = Image.new("RGB", (100, 100))
             artifact_uri = run.info.artifact_uri
             print(artifact_uri)
-            mlflow.log_image(image, "image.png")
-            image = mlflow.artifacts.load_image(artifact_uri + "/image.png")
+            mlflow.log_artifact(model_name + "_cm.png", "confusion_matrix")
             # print(image)
             mlflow.log_artifact("Dataset/train.csv")
             mlflow.set_tag("model_name", model_name)
             signature = infer_signature(X_train, model_obj.predict(X_train))
             print(signature)
             mlflow.sklearn.log_model(model_obj, "model", registered_model_name=model_name, signature=signature)
-            # print(model_info.model_uri)
-            # r = mlflow.get_run(run_id=run.info.run_id)
-            # print(MlflowClient().list_artifacts(r.info.run_id))
             # params, metrics, tags, artifacts = fetch_logged_data(run.info.run_id)
 
 
