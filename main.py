@@ -8,6 +8,7 @@ import pandas as pd
 import warnings
 
 from mlflow import MlflowClient
+from mlflow.models import ModelSignature, infer_signature
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 # from collections import Counter
@@ -24,18 +25,20 @@ from sklearn.ensemble import ExtraTreesClassifier
 from pathlib import Path
 import mlflow
 import mlflow.sklearn
+from mlflow.types.schema import Schema, ColSpec
 import logging
+from PIL import Image
 
 import os
 
-os.environ['HTTP_PROXY']="http://genproxy.amdocs.com:8080"
-os.environ['HTTPS_PROXY']="http://genproxy.amdocs.com:8080"
-os.environ['no_proxy']="localhost,127.0.0.1,.svc,.local,.amdocs.com,.sock,docker.sock,localaddress,.localdomain.com"
+# os.system()
+# os.environ['HTTP_PROXY']="http://genproxy.amdocs.com:8080"
+# os.environ['HTTPS_PROXY']="http://genproxy.amdocs.com:8080"
+# os.environ['no_proxy']="localhost,127.0.0.1,.svc,.local,.amdocs.com,.sock,docker.sock,localaddress,.localdomain.com"
 
 warnings.filterwarnings('ignore')
 
 mlflow.set_tracking_uri('http://ilcepoc2353:1235/')
-mlflow.set_experiment("alpha's xyz")
 
 
 def evaluation_metrics(X_test, X_train, y_train, y_test, model):
@@ -56,10 +59,13 @@ def evaluation_metrics(X_test, X_train, y_train, y_test, model):
     print(f"F1_score: {F1_score}")
     return disp, [Accuracy, F1_score, mae, r2, Precision, Recall, rmse]
 
+def search_experiments():
+    experiments = mlflow.search_experiments(order_by=["name"])
+    return experiments
 
 def delete_models():
     client = MlflowClient()
-    versions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    versions = [981219]
     models = ["LogisticRegression", "RandomForestClassifier", "DecisionTreeClassifier",
               "AdaBoostClassifier", "GradientBoostingClassifier", "ExtraTreesClassifier"]
     for model_name in models:
@@ -73,9 +79,28 @@ def delete_models():
         except mlflow.exceptions.RestException:
             pass
 
+# def create_schema():
+#     input_schema = Schema([
+#         ColSpec("double", "sepal length (cm)"),
+#         ColSpec("double", "sepal width (cm)"),
+#         ColSpec("double", "petal length (cm)"),
+#         ColSpec("double", "petal width (cm)"),
+#     ])
+#     output_schema = Schema([ColSpec("long")])
+#     signature = ModelSignature(inputs=input_schema, outputs=output_schema)
+#     return signature
 
-if __name__ == "__main__":
-    # read data
+
+def fetch_logged_data(run_id):
+    client = MlflowClient()
+    data = client.get_run(run_id).data
+    tags = {k: v for k, v in data.tags.items() if not k.startswith("mlflow.")}
+    artifacts = [f.path for f in client.list_artifacts(run_id, "model")]
+    return data.params, data.metrics, tags, artifacts
+
+def run_experiments():
+
+    mlflow.set_experiment("XYZ")
     train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
     df = pd.read_csv(train_data_path)
 
@@ -101,7 +126,7 @@ if __name__ == "__main__":
         print(50 * '*')
         print(f"{model_name}")
         print(50 * '*')
-        with mlflow.start_run():
+        with mlflow.start_run() as run:
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
             # disp.plot()
             # plt.grid(False)
@@ -113,12 +138,24 @@ if __name__ == "__main__":
             mlflow.log_metric("Precision", params[4])
             mlflow.log_metric("Recall", params[5])
             mlflow.log_metric("rmse", params[6])
-            if tracking_url_type_store != "file":
-                # Register the model
-                model_info = mlflow.sklearn.log_model(model_obj, artifact_path="model",
-                                                      registered_model_name=model_name)
-            else:
-                model_info = mlflow.sklearn.log_model(model_obj, artifact_path=model_name)
+            image = Image.new("RGB", (100, 100))
+            artifact_uri = run.info.artifact_uri
+            print(artifact_uri)
+            mlflow.log_image(image, "image.png")
+            image = mlflow.artifacts.load_image(artifact_uri + "/image.png")
+            # print(image)
+            mlflow.log_artifact("Dataset/train.csv")
+            mlflow.set_tag("model_name",model_name)
+            signature = infer_signature(X_train, model_obj.predict(X_train))
+            print(signature)
+            mlflow.sklearn.log_model(model_obj, "model", registered_model_name=model_name,signature=signature)
+            # print(model_info.model_uri)
+            # r = mlflow.get_run(run_id=run.info.run_id)
+            # print(MlflowClient().list_artifacts(r.info.run_id))
+            params, metrics, tags, artifacts = fetch_logged_data(run.info.run_id)
 
-            print(model_info.model_uri)
-    # delete_models()
+if __name__ == "__main__":
+    # read data
+     run_experiments()
+    #print(search_experiments())
+    #delete_models()
