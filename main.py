@@ -28,7 +28,7 @@ import mlflow.sklearn
 from mlflow.types.schema import Schema, ColSpec
 import logging
 from PIL import Image
-
+import json
 import os
 
 # os.system()
@@ -38,7 +38,10 @@ import os
 
 warnings.filterwarnings('ignore')
 
-mlflow.set_tracking_uri('http://ilcepoc2353:1235/')
+with open('properties.json') as f:
+    data = json.load(f)
+
+mlflow.set_tracking_uri(data['tracking_uri'])
 
 
 def evaluation_metrics(X_test, X_train, y_train, y_test, model):
@@ -59,9 +62,11 @@ def evaluation_metrics(X_test, X_train, y_train, y_test, model):
     print(f"F1_score: {F1_score}")
     return disp, [Accuracy, F1_score, mae, r2, Precision, Recall, rmse]
 
+
 def search_experiments():
     experiments = mlflow.search_experiments(order_by=["name"])
     return experiments
+
 
 def delete_models():
     client = MlflowClient()
@@ -79,28 +84,18 @@ def delete_models():
         except mlflow.exceptions.RestException:
             pass
 
-# def create_schema():
-#     input_schema = Schema([
-#         ColSpec("double", "sepal length (cm)"),
-#         ColSpec("double", "sepal width (cm)"),
-#         ColSpec("double", "petal length (cm)"),
-#         ColSpec("double", "petal width (cm)"),
-#     ])
-#     output_schema = Schema([ColSpec("long")])
-#     signature = ModelSignature(inputs=input_schema, outputs=output_schema)
-#     return signature
 
+# def fetch_logged_data(run_id):
+#     client = MlflowClient()
+#     data = client.get_run(run_id).data
+#     tags = {k: v for k, v in data.tags.items() if not k.startswith("mlflow.")}
+#     artifacts = [f.path for f in client.list_artifacts(run_id, "model")]
+#     return data.params, data.metrics, tags, artifacts
 
-def fetch_logged_data(run_id):
-    client = MlflowClient()
-    data = client.get_run(run_id).data
-    tags = {k: v for k, v in data.tags.items() if not k.startswith("mlflow.")}
-    artifacts = [f.path for f in client.list_artifacts(run_id, "model")]
-    return data.params, data.metrics, tags, artifacts
 
 def run_experiments():
-
-    mlflow.set_experiment("XYZ")
+    global data
+    mlflow.set_experiment(data['experiment'])
     train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
     df = pd.read_csv(train_data_path)
 
@@ -145,17 +140,18 @@ def run_experiments():
             image = mlflow.artifacts.load_image(artifact_uri + "/image.png")
             # print(image)
             mlflow.log_artifact("Dataset/train.csv")
-            mlflow.set_tag("model_name",model_name)
+            mlflow.set_tag("model_name", model_name)
             signature = infer_signature(X_train, model_obj.predict(X_train))
             print(signature)
-            mlflow.sklearn.log_model(model_obj, "model", registered_model_name=model_name,signature=signature)
+            mlflow.sklearn.log_model(model_obj, "model", registered_model_name=model_name, signature=signature)
             # print(model_info.model_uri)
             # r = mlflow.get_run(run_id=run.info.run_id)
             # print(MlflowClient().list_artifacts(r.info.run_id))
-            params, metrics, tags, artifacts = fetch_logged_data(run.info.run_id)
+            # params, metrics, tags, artifacts = fetch_logged_data(run.info.run_id)
+
 
 if __name__ == "__main__":
     # read data
-     run_experiments()
-    #print(search_experiments())
-    #delete_models()
+    run_experiments()
+# print(search_experiments())
+# delete_models()
