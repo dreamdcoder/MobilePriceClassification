@@ -27,7 +27,7 @@ from pathlib import Path
 import mlflow
 import mlflow.sklearn
 import logging
-from PIL import Image
+
 import json
 import os
 
@@ -38,13 +38,14 @@ import os
 
 warnings.filterwarnings('ignore')
 
+# Read properties file
 with open('properties.json') as f:
     data = json.load(f)
 
 mlflow.set_tracking_uri(data['tracking_uri'])
 
 
-def evaluation_metrics(X_test, X_train, y_train, y_test, model):
+def evaluation_metrics(X_test, X_train, y_train, y_test, model):  # Function to get eval metrics for models
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     cm = confusion_matrix(y_test, y_pred, labels=model.classes_)
@@ -63,12 +64,12 @@ def evaluation_metrics(X_test, X_train, y_train, y_test, model):
     return disp, [Accuracy, F1_score, mae, r2, Precision, Recall, rmse]
 
 
-def search_experiments():
+def search_experiments():  # Function to search MLFLOW experiments
     experiments = mlflow.search_experiments(order_by=["name"])
     return experiments
 
 
-def delete_models():
+def delete_models():  # Function to run delete Models
     client = MlflowClient()
     versions = [981219]
     models = ["LogisticRegression", "RandomForestClassifier", "DecisionTreeClassifier",
@@ -93,9 +94,12 @@ def delete_models():
 #     return data.params, data.metrics, tags, artifacts
 
 
-def run_experiments():
+def run_experiments():  # Function to run MLFLOW experiments
     global data
+    # set experiment name
     mlflow.set_experiment(data['experiment'])
+
+    # Data ingestion
     train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
     df = pd.read_csv(train_data_path)
 
@@ -106,28 +110,36 @@ def run_experiments():
     # split Data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=32, shuffle=True)
 
+    # create models
     lr = LogisticRegression(random_state=0)
     rf = RandomForestClassifier(n_estimators=200)
     ab = AdaBoostClassifier(n_estimators=200)
     gtb = GradientBoostingClassifier(n_estimators=200)
     dtc = DecisionTreeClassifier(random_state=0)
-    etc = ExtraTreesClassifier(random_state=0)
+    # etc = ExtraTreesClassifier(random_state
+    # =0)
 
     models = {"LogisticRegression": lr, "RandomForestClassifier": rf, "DecisionTreeClassifier": dtc,
               "AdaBoostClassifier": ab, "GradientBoostingClassifier": gtb}  # , "ExtraTreesClassifier": etc}
     # models = {"ExtraTreesClassifier": etc}
-    tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
-    print(tracking_url_type_store)
+    # tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
+    # print(tracking_url_type_store)
     for model_name, model_obj in models.items():
         print(50 * '*')
         print(f"{model_name}")
         print(50 * '*')
+
+        # start MLFLOW Run
         with mlflow.start_run() as run:
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
             disp.plot()
             # plt.grid(False)
             # plt.show()
+
+            # Save Confusion Matrix Plot
             plt.savefig(model_name + "_cm.png")
+
+            # Log Metrics
             mlflow.log_metric("Accuracy", params[0])
             mlflow.log_metric("F1_score", params[1])
             mlflow.log_metric("mae", params[2])
@@ -135,14 +147,18 @@ def run_experiments():
             mlflow.log_metric("Precision", params[4])
             mlflow.log_metric("Recall", params[5])
             mlflow.log_metric("rmse", params[6])
-            artifact_uri = run.info.artifact_uri
-            print(artifact_uri)
+            # artifact_uri = run.info.artifact_uri
+            # print(artifact_uri)
+
+            # Log artifacts
             mlflow.log_artifact(model_name + "_cm.png", "confusion_matrix")
-            # print(image)
             mlflow.log_artifact("Dataset/train.csv")
             mlflow.set_tag("model_name", model_name)
+
+            # create model signature
             signature = infer_signature(X_train, model_obj.predict(X_train))
-            print(signature)
+
+            # log and register model
             mlflow.sklearn.log_model(model_obj, "model", registered_model_name=model_name, signature=signature)
             # params, metrics, tags, artifacts = fetch_logged_data(run.info.run_id)
 
