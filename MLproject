@@ -1,0 +1,10 @@
+name: MobilePriceClassification
+
+conda_env: ENV.yml
+# Can have a docker_env instead of a conda_env, e.g.
+# docker_env:
+#    image:  mlflow-docker-example
+
+entry_points:
+  main:
+    command: "python main.py"
