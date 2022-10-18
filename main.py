@@ -43,7 +43,6 @@ with open('properties.json') as f:
     data = json.load(f)
 
 mlflow.set_tracking_uri(data['tracking_uri'])
-print ("x")
 def evaluation_metrics(X_test, X_train, y_train, y_test, model):  # Function to get eval metrics for models
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
