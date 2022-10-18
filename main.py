@@ -97,8 +97,8 @@ def delete_models():  # Function to run delete Models
 def run_experiments():  # Function to run MLFLOW experiments
     global data
     # set experiment name
-    experiment_name = data['experiment']
-    experiment = mlflow.set_experiment(experiment_name=experiment_name)
+    # experiment_name = data['experiment']
+    # experiment = mlflow.set_experiment(experiment_name=experiment_name)
 
     # Data ingestion
     train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
@@ -129,14 +129,14 @@ def run_experiments():  # Function to run MLFLOW experiments
         print(50 * '*')
         print(f"{model_name}")
         print(50 * '*')
-        print(f"experiment_id is {experiment.experiment_id}")
+        # print(f"experiment_id is {experiment.experiment_id}")
         # start MLFLOW Run
-        with mlflow.start_run(experiment_id=experiment.experiment_id) as run:
+        with mlflow.start_run() as run:
+            print(run.info.run_id)
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
             disp.plot()
             # plt.grid(False)
             # plt.show()
-
             # Save Confusion Matrix Plot
             plt.savefig(model_name + "_cm.png")
 
