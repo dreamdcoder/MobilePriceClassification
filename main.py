@@ -95,7 +95,8 @@ def delete_models():  # Function to run delete Models
 def run_experiments():  # Function to run MLFLOW experiments
     global data
     # set experiment name
-    mlflow.set_experiment(data['experiment'])
+    experiment_name=data['experiment']
+    experiment=mlflow.set_experiment(experiment_name=experiment_name)
 
     # Data ingestion
     train_data_path = Path("Dataset/train.csv")  # test_data_path = Path("Dataset/test.csv")
@@ -128,7 +129,7 @@ def run_experiments():  # Function to run MLFLOW experiments
         print(50 * '*')
 
         # start MLFLOW Run
-        with mlflow.start_run() as run:
+        with mlflow.start_run(experiment_id=experiment.experiment_id) as run:
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
             disp.plot()
             # plt.grid(False)
