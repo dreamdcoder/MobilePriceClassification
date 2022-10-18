@@ -131,6 +131,7 @@ def run_experiments():  # Function to run MLFLOW experiments
         print(50 * '*')
         # print(f"experiment_id is {experiment.experiment_id}")
         # start MLFLOW Run
+        mlflow.autolog()
         with mlflow.start_run() as run:
             print(run.info.run_id)
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
@@ -141,13 +142,13 @@ def run_experiments():  # Function to run MLFLOW experiments
             plt.savefig(model_name + "_cm.png")
 
             # Log Metrics
-            mlflow.log_metric("Accuracy", params[0])
-            mlflow.log_metric("F1_score", params[1])
-            mlflow.log_metric("mae", params[2])
-            mlflow.log_metric("r2", params[3])
-            mlflow.log_metric("Precision", params[4])
-            mlflow.log_metric("Recall", params[5])
-            mlflow.log_metric("rmse", params[6])
+            # mlflow.log_metric("Accuracy", params[0])
+            # mlflow.log_metric("F1_score", params[1])
+            # mlflow.log_metric("mae", params[2])
+            # mlflow.log_metric("r2", params[3])
+            # mlflow.log_metric("Precision", params[4])
+            # mlflow.log_metric("Recall", params[5])
+            # mlflow.log_metric("rmse", params[6])
             # artifact_uri = run.info.artifact_uri
             # print(artifact_uri)
 
