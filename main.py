@@ -131,7 +131,7 @@ def run_experiments():  # Function to run MLFLOW experiments
         print(50 * '*')
         # print(f"experiment_id is {experiment.experiment_id}")
         # start MLFLOW Run
-        mlflow.autolog()
+        #mlflow.autolog()
         with mlflow.start_run(run_name="Alpha") as run:
             print(run.info.run_id)
             disp, params = evaluation_metrics(X_test, X_train, y_train, y_test, model_obj)
